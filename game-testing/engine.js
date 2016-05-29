@@ -9,7 +9,13 @@ var pregame = {
       x:0,
       y:0
     };
-    this.cols = {};
+    this.cols = {
+      up: {t:false,ent:{},geom:{}},
+      down: {t:false,ent:{},geom:{}},
+      left: {t:false,ent:{},geom:{}},
+      right: {t:false,ent:{},geom:{}},
+      middle: {trigger: {}, touch:false}
+    };
     return this;
   },
   gwhst: function (text,font,padding) {
@@ -40,7 +46,7 @@ var pregame = {
     whs.width = longestText.size + (padding * 2);
     return whs;
   },
-  textboxTemplate: function (x,y,font,text,padding,fg,bg) {
+  textboxTemplate: function (x,y,font,text,padding,fg,bg,enabled) {
     var pad = padding;
     var tempwhst = pregame.gwhst(text,font,pad);
     var textbox = {
@@ -54,7 +60,7 @@ var pregame = {
       bg: bg,
       fg: fg,
       pad: pad,
-      enabled: false
+      enabled: enabled
     };
     return textbox;
   }
@@ -79,6 +85,7 @@ var game = {
     return toReturn;
   },
   data: {
+    flags: {},
     map: "start",
     get p() {
       return game.data.player;
@@ -224,6 +231,15 @@ var game = {
           return game.data.player.clip;
         },
         font:"20px Monospace"
+      },
+      reloadstxt: {
+        x: 480,
+        y: 480 - 16,
+        color: "#baf704",
+        get text() {
+          return game.data.player.reloads;
+        },
+        font:"20px Monospace"
       }
     },
     textbox: {
@@ -287,12 +303,33 @@ var game = {
       triggers: [
         {
           func: function () {
-            alert("BOI!");
+            game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x,game.data.player.y - 64,"12px Arial",["Hello, This is:","A GAME","that I havent named yet"],5,"#FFFFFF","rgba(100,100,100,0.8)",(game.data.map === "start"));
           },
-          x1: 100 - 16,
-          x2: 100,
-          y1: 10,
-          y2: 32
+          x1: 0,
+          x2: 128,
+          y1: 432,
+          y2: 464
+        },
+        {
+          func: function () {
+            game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x,game.data.player.y - 64,"12px Arial",["Triggers are cool,","Right?"],5,"#FFFFFF","rgba(100,100,100,0.8)",(game.data.map === "start"));
+          },
+          x1: 129,
+          x2: 193,
+          y1: 432,
+          y2: 464
+        },
+        {
+          func: function () {
+            game.maps.start.enemies.push(new pregame.enemyTemplate(16,450,10));
+          },
+          x1: 257,
+          x2: 289,
+          y1: 416,
+          y2: 464,
+          onetime:{
+            on:true
+          }
         }
       ],
       enemies: [
@@ -407,7 +444,7 @@ var game = {
       down: {t:false,ent:{},geom:{}},
       left: {t:false,ent:{},geom:{}},
       right: {t:false,ent:{},geom:{}},
-      middle: {trigger: {}, touch:false}
+      middle: {trigger: {}, touch:false,tnum:0}
     };
     var gdp = game.data.player;
     var colLocs = {
@@ -418,15 +455,17 @@ var game = {
       r: {x:gdp.x + gdp.w / 2 + 1,y:[gdp.y - gdp.h / 2, gdp.y + gdp.h / 2]},
     };
     var currMap = game.maps[game.data.map];
-    for (var trig in currMap.triggers) {
-      if ((colLocs.m.x > trig.x1) && (colLocs.m.x < trig.x2) && (colLocs.m.y > trig.y1) && (colLocs.m.y < trig.y2)) {
-        colObj.middle.touch = true;
-        colObj.middle.trigger = trig;
-      }
-      else {
-        colObj.middle.touch = false;
+    if (Array.isArray(currMap.triggers)) {
+      for (var trign = 0;trign < currMap.triggers.length;trign++) {
+        var trig = currMap.triggers[trign];
+        if ((colLocs.m.x > trig.x1) && (colLocs.m.x < trig.x2) && (colLocs.m.y > trig.y1) && (colLocs.m.y < trig.y2)) {
+          colObj.middle.touch = true;
+          colObj.middle.trigger = currMap.triggers[trign];
+          colObj.middle.tnum = trign;
+        }
       }
     }
+
     for (var geomno = 0;geomno < currMap.geoms.length;geomno++) {
       var simpleGeom = currMap.geoms[geomno];
       if (simpleGeom.type === "rect") {
@@ -484,6 +523,20 @@ var game = {
     game.data.player.cols = colObj;
   },
   update:function () {
+    //remove previous textbox
+    game.renderpoints.textbox = {
+      x:0,
+      y:0,
+      text: "",
+      font: "",
+      width: 0,
+      height: 0,
+      singleHeight:0,
+      bg: "",
+      fg: "",
+      pad: 0,
+      enabled: false
+    };
     //controlls stuff
     if ((game.gamepads[0].sticks.l.x > 0.5) || (game.gamepads[0].sticks.l.x< -0.5) || (game.gamepads[0].sticks.l.y > 0.5) || (game.gamepads[0].sticks.l.y < -0.5)) {
       game.data.player.spd.x += game.gamepads[0].sticks.l.x;
@@ -505,7 +558,6 @@ var game = {
     if ((game.gamepads[0].buttons.r1.pressed) && (!(game.gamepads[0].buttons.r1.pressedlf))) {
       game.data.player.mvs.attacking = true;
     }
-    if (game.data.player.cols.middle.touch === true) {game.data.player.cols.middle.trigger.func();}
     if (game.gamepads[0].buttons.l1.pressed) {game.screenfx.hud = true;}
     else {game.screenfx.hud = false;}
     if ((game.gamepads[0].buttons.r1.pressed) && (!game.gamepads[0].buttons.r1.pressedlf)) {
@@ -598,6 +650,13 @@ var game = {
     }
 
     //collisions stuff?
+    if ((game.data.player.cols.middle.touch === true) && (typeof game.data.player.cols.middle.trigger.onetime !== "undefined")) {
+      if (game.data.player.cols.middle.trigger.onetime.on === true) {
+        game.maps[game.data.map].triggers[game.data.player.cols.middle.tnum].onetime.on = !game.data.player.cols.middle.trigger.onetime.on;
+        game.data.player.cols.middle.trigger.func();
+      }
+    }
+    else if (game.data.player.cols.middle.touch === true) {game.data.player.cols.middle.trigger.func();}
     game.data.player.gravity = true;
     if ((game.data.player.cols.left.t) && (game.data.player.spd.x < 0)) {
       game.data.player.spd.x = 0;
@@ -704,11 +763,7 @@ var game = {
         }
       }
     }
-    //maketextbox using x,y,font,text,padding,fg,bg
-    game.renderpoints.textbox = pregame.textboxTemplate(32,32,"12px Arial",["Hello, This is:","A GAME","that I havent named yet"],5,"#FFFFFF","rgba(100,100,100,0.8)");
-    //if map is start show textbox
-    game.renderpoints.textbox.enabled = (game.data.map === "start");
-    //nice use of not needing if
+
   },
   updateGamepads:function () {
     game.rawpads = navigator.getGamepads();
@@ -815,12 +870,15 @@ var game = {
     game.draw.fillStyle = "rgba(100,100,100,0.8)";
     game.draw.fillRect(8, 480 - 40, 100, 32);
     game.draw.fillRect(360 - 8, 480 - 40, 100, 32);
+    game.draw.fillRect(480 - 8, 480 - 40, 100, 32);
     game.draw.fillStyle = game.renderpoints.hud.hptxt.color;
     game.draw.font = game.renderpoints.hud.hptxt.font;
     game.draw.fillText(game.renderpoints.hud.hptxt.text,game.renderpoints.hud.hptxt.x,game.renderpoints.hud.hptxt.y);
     game.draw.fillStyle = game.renderpoints.hud.cliptxt.color;
     game.draw.font = game.renderpoints.hud.cliptxt.font;
     game.draw.fillText(game.renderpoints.hud.cliptxt.text,game.renderpoints.hud.cliptxt.x,game.renderpoints.hud.cliptxt.y);
+    game.draw.font = game.renderpoints.hud.reloadstxt.font;
+    game.draw.fillText(game.renderpoints.hud.reloadstxt.text,game.renderpoints.hud.reloadstxt.x,game.renderpoints.hud.reloadstxt.y);
 
     //rendertextbox if enabled
     if (game.renderpoints.textbox.enabled) {
