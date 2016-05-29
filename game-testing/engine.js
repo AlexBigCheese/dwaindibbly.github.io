@@ -63,6 +63,9 @@ var pregame = {
       enabled: enabled
     };
     return textbox;
+  },
+  randomInt(min,max) {
+    return Math.round(Math.random() * (max - min) + min);
   }
 };
 var game = {
@@ -194,6 +197,9 @@ var game = {
     anons: [
 
     ],
+    background: {
+      clouds: []
+    },
     player: {
       rtype: "solid",
       color: "#fb0df3",
@@ -369,6 +375,7 @@ var game = {
     game.canv.height = 480;
     document.body.appendChild(game.canv);
     game.draw = game.canv.getContext("2d");
+    game.makebg();
     window.addEventListener("keydown", function(ev) {
       switch (ev.key) {
         case "d":
@@ -437,6 +444,20 @@ var game = {
     game.update();
     game.render();
     window.requestAnimationFrame(game.loop);
+  },
+  makebg:function() {
+    //clouds
+    game.renderpoints.background.clouds = [];
+    var cloudcount = pregame.randomInt(0,10);
+    for (var cloudnum = 0;cloudnum < cloudcount;cloudnum++) {
+      var tempw = pregame.randomInt(10,64);
+      game.renderpoints.background.clouds.push({
+        x:pregame.randomInt(0,640),
+        y:pregame.randomInt(0,100),
+        w:tempw,
+        h:pregame.randomInt(10,tempw)
+      });
+    }
   },
   updateColls: function () {
     var colObj = {
@@ -623,6 +644,7 @@ var game = {
       if ("right" in game.maps[game.data.map].sides) {
         if (game.maps[game.data.map].sides.right !== "finish") {
           game.data.map = game.maps[game.data.map].sides.right;
+          game.makebg();
           game.data.player.x = 0;
         }
         else {
@@ -637,6 +659,7 @@ var game = {
       if ("left" in game.maps[game.data.map].sides) {
         if (game.maps[game.data.map].sides.left !== "finish") {
           game.data.map = game.maps[game.data.map].sides.left;
+          game.makebg();
           game.data.player.x = game.canv.width;
         }
         else {
@@ -841,7 +864,12 @@ var game = {
         game.draw.fillRect(simpleGeom.x1,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
       }
     }
-
+    //render clouds
+    game.draw.fillStyle = "rgba(200,200,200,0.8)";
+    for (var cloudnum = 0;cloudnum < game.renderpoints.background.clouds.length;cloudnum++) {
+      var cloud = game.renderpoints.background.clouds[cloudnum];
+      game.draw.fillRect(cloud.x,cloud.y,cloud.w,cloud.h);
+    }
     //render square which is player
     game.draw.fillStyle = game.renderpoints.player.color;
     game.draw.fillRect(game.renderpoints.player.x - game.renderpoints.player.width / 2,game.renderpoints.player.y - game.renderpoints.player.height / 2,game.renderpoints.player.width,game.renderpoints.player.height);
