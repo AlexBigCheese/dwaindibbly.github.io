@@ -2,6 +2,7 @@ var pregame = {
   enemyTemplate: function (x,y,hp) {
     this.w = this.h = 16;
     this.hp = hp;
+    this.maxhp = hp;
     this.x = x;
     this.y = y;
     this.gravity = false;
@@ -362,6 +363,17 @@ var game = {
           color:"#00FF00",
         }
 
+      ],
+      triggers: [
+        {
+          func() {
+            game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x - 64,game.data.player.y - 64,"12px Arial","Where are you going?",5,"#FFFFFF","rgba(100,100,100,0.8)",(game.data.map === "jump over"));
+          },
+          x1:568,
+          x2:640,
+          y1:400,
+          y2:464
+        }
       ],
       sides: {
         left: "start",
@@ -878,11 +890,20 @@ var game = {
       game.draw.fillStyle = game.renderpoints.player.weapon.color;
       game.draw.fillRect(game.renderpoints.player.weapon.x - game.renderpoints.player.weapon.width / 2, game.renderpoints.player.weapon.y - game.renderpoints.player.weapon.height / 2, game.renderpoints.player.weapon.width, game.renderpoints.player.weapon.height);
     }
-    //render enemies
+    //render enemies and their hp
     if ("enemies" in game.maps[game.data.map]) {
       for (var enemyno = 0;enemyno < game.maps[game.data.map].enemies.length;enemyno++) {
         game.draw.fillStyle = "#56090d";
         game.draw.fillRect(game.maps[game.data.map].enemies[enemyno].x - 8, game.maps[game.data.map].enemies[enemyno].y - 8, 16, 16);
+        game.draw.fillStyle = "#2a2840";
+        game.draw.fillRect(game.maps[game.data.map].enemies[enemyno].x - 16,game.maps[game.data.map].enemies[enemyno].y - 16,32,4);
+        if (game.maps[game.data.map].enemies[enemyno].hp < game.maps[game.data.map].enemies[enemyno].maxhp / 2) {
+          game.draw.fillStyle = "#f58905";
+        }
+        else {
+          game.draw.fillStyle = "#0ee81c";
+        }
+        game.draw.fillRect(game.maps[game.data.map].enemies[enemyno].x - 15,game.maps[game.data.map].enemies[enemyno].y - 15,(30 / game.maps[game.data.map].enemies[enemyno].maxhp) * game.maps[game.data.map].enemies[enemyno].hp,2)
       }
     }
 
