@@ -244,7 +244,18 @@ var game = {
       axesraw: []
     }
   ],
+  get rp() {return game.renderpoints;},
   renderpoints: {
+    mapScroll: {
+      direction: "",
+      offset:0,
+      playeroffset:0,
+      playerx: 0,
+      playery: 0,
+      to:"",
+      enabled: false,
+      start: true
+    },
     anons: [
 
     ],
@@ -641,6 +652,9 @@ var game = {
       pad: 0,
       enabled: false
     };
+    //if mapscroll then STOP (return)!
+    if (game.rp.mapScroll.enabled) return;
+    //else,
     //controlls stuff
     if ((game.gamepads[0].sticks.l.x > 0.5) || (game.gamepads[0].sticks.l.x< -0.5) || (game.gamepads[0].sticks.l.y > 0.5) || (game.gamepads[0].sticks.l.y < -0.5)) {
       game.data.player.spd.x += game.gamepads[0].sticks.l.x;
@@ -726,7 +740,8 @@ var game = {
     if (game.data.player.x > game.canv.width) {
       if ("right" in game.maps[game.data.map].sides) {
         if (game.maps[game.data.map].sides.right !== "finish") {
-          game.data.map = game.maps[game.data.map].sides.right;
+          game.renderpoints.mapScroll.enabled = true;
+          game.renderpoints.mapScroll.direction = "right";
           game.makebg();
           game.data.player.x = 0;
         }
@@ -741,7 +756,8 @@ var game = {
     if (game.data.player.x < 0) {
       if ("left" in game.maps[game.data.map].sides) {
         if (game.maps[game.data.map].sides.left !== "finish") {
-          game.data.map = game.maps[game.data.map].sides.left;
+          game.renderpoints.mapScroll.enabled = true;
+          game.renderpoints.mapScroll.direction = "left";
           game.makebg();
           game.data.player.x = game.canv.width;
         }
@@ -937,6 +953,81 @@ var game = {
           game.draw.fillText(anono.drawData.text, anono.drawData.x, anono.drawData.y);
         }
       }
+    }
+    if (game.rp.mapScroll.enabled) {
+      if (game.rp.mapScroll.direction === "right") {
+        if (game.rp.mapScroll.start) {
+          game.renderpoints.mapScroll.playerx = game.canv.width - 1;
+          game.renderpoints.mapScroll.start = false;
+        }
+        //render both maps and offset
+        //map before
+        for (var geomno = 0;geomno < game.maps[game.data.map].geoms.length;geomno++) {
+          var simpleGeom = game.maps[game.data.map].geoms[geomno];
+          game.draw.fillStyle = simpleGeom.color;
+          if (simpleGeom.type === "rect") {
+            game.draw.fillRect(simpleGeom.x1 - game.rp.mapScroll.offset,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
+          }
+        }
+        //map after
+        for (var geomno = 0;geomno < game.maps[game.maps[game.data.map].sides.right].geoms.length;geomno++) {
+          var simpleGeom = game.maps[game.maps[game.data.map].sides.right].geoms[geomno];
+          game.draw.fillStyle = simpleGeom.color;
+          if (simpleGeom.type === "rect") {
+            game.draw.fillRect((simpleGeom.x1 - game.rp.mapScroll.offset) + game.canv.width,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
+          }
+        }
+        //player transition and offsetting here
+        // here
+        // and here?
+        game.draw.fillStyle = game.renderpoints.player.color;
+        game.draw.fillRect((game.renderpoints.mapScroll.playerx - game.renderpoints.player.width / 2) - game.rp.mapScroll.playeroffset,game.renderpoints.player.y - game.renderpoints.player.height / 2,game.renderpoints.player.width,game.renderpoints.player.height);
+      }
+      //left
+      if (game.rp.mapScroll.direction === "left") {
+        if (game.rp.mapScroll.start) {
+          game.renderpoints.mapScroll.playerx = 1;
+          game.renderpoints.mapScroll.start = false;
+        }
+        //render both maps and offset
+        //map before
+        for (var geomno = 0;geomno < game.maps[game.data.map].geoms.length;geomno++) {
+          var simpleGeom = game.maps[game.data.map].geoms[geomno];
+          game.draw.fillStyle = simpleGeom.color;
+          if (simpleGeom.type === "rect") {
+            game.draw.fillRect(simpleGeom.x1 + game.rp.mapScroll.offset,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
+          }
+        }
+        //map after
+        for (var geomno = 0;geomno < game.maps[game.maps[game.data.map].sides.left].geoms.length;geomno++) {
+          var simpleGeom = game.maps[game.maps[game.data.map].sides.left].geoms[geomno];
+          game.draw.fillStyle = simpleGeom.color;
+          if (simpleGeom.type === "rect") {
+            game.draw.fillRect((simpleGeom.x1 + game.rp.mapScroll.offset) - game.canv.width,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
+          }
+        }
+        //player transition and offsetting here
+        // here
+        // and here?
+        game.draw.fillStyle = game.renderpoints.player.color;
+        game.draw.fillRect((game.renderpoints.mapScroll.playerx - game.renderpoints.player.width / 2) + game.rp.mapScroll.playeroffset,game.renderpoints.player.y - game.renderpoints.player.height / 2,game.renderpoints.player.width,game.renderpoints.player.height);
+      }
+      if (game.renderpoints.mapScroll.offset === game.canv.width) {
+        game.renderpoints.mapScroll.enabled = false;
+        game.renderpoints.mapScroll.offset = 0;
+        game.renderpoints.mapScroll.playeroffset = 0;
+        game.renderpoints.mapScroll.start = true;
+        if (game.rp.mapScroll.direction === "right") game.data.map = game.maps[game.data.map].sides.right;
+        if (game.rp.mapScroll.direction === "left") game.data.map = game.maps[game.data.map].sides.left;
+      }
+      else {game.renderpoints.mapScroll.offset += 10;game.renderpoints.mapScroll.playeroffset += 10;}
+      game.draw.fillStyle = "#000000";
+      for (var bulletno = 0;bulletno < game.data.player.wep.bullets.length;bulletno++) {
+        if (typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") {
+          game.draw.fillRect(game.data.player.wep.bullets[bulletno].pos.x - 2, game.data.player.wep.bullets[bulletno].pos.y - 2, 4, 4);
+        }
+      }
+      return;
     }
     //render map
     //render geoms
