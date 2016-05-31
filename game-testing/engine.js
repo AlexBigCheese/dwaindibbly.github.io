@@ -1,3 +1,7 @@
+var chroma;
+if (typeof process !== "undefined" && process.versions['node-webkit']) {
+    chroma = require("chroma-js");
+}
 var pregame = {
   enemyTemplate: function (x,y,hp) {
     this.w = this.h = 16;
@@ -67,6 +71,52 @@ var pregame = {
   },
   randomInt(min,max) {
     return Math.round(Math.random() * (max - min) + min);
+  },
+  flashingColors: {},
+  colorFlash: {
+    make(name,colora,colorb,time) {
+      if (typeof pregame.flashingColors[name] === "undefined") {
+        //btw, credit to chroma js lib
+        pregame.flashingColors[name] = {
+          colora: colora,
+          colorb: colorb,
+          currColor: "",
+          time: time,
+          frame: 0,
+          minus: false,
+          colorScale: chroma.scale([colora,colorb])
+        };
+      }
+    },
+    remove(name) {
+      if (typeof pregame.flashingColors[name] !== "undefined") {
+        delete pregame.flashingColors[name];
+      }
+    },
+    retr(name) {
+      return pregame.flashingColors[name].currColor;
+    },
+    update() {
+      for (var color in pregame.flashingColors) {
+        if (pregame.flashingColors.hasOwnProperty(color)) {
+          if (pregame.flashingColors[color].frame > pregame.flashingColors[color].time) {
+            pregame.flashingColors[color].minus = true;
+            pregame.flashingColors[color].frame--;
+          }
+          else if (pregame.flashingColors[color].frame === -1) {
+            pregame.flashingColors[color].minus = false
+            pregame.flashingColors[color].frame++;
+          }
+          else if (pregame.flashingColors[color].minus) {
+            pregame.flashingColors[color].frame--;
+          }
+          else if (!pregame.flashingColors[color].minus) {
+            pregame.flashingColors[color].frame++;
+          }
+          pregame.flashingColors[color].currColor = pregame.flashingColors[color].colorScale(pregame.flashingColors[color].frame / pregame.flashingColors[color].time);
+        }
+      }
+    }
   }
 };
 var game = {
@@ -367,7 +417,7 @@ var game = {
       triggers: [
         {
           func() {
-            game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x - 64,game.data.player.y - 64,"12px Arial","Where are you going?",5,"#FFFFFF","rgba(100,100,100,0.8)",(game.data.map === "jump over"));
+            game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x - 64,game.data.player.y - 64,"12px Arial","Where are you going?",5,pregame.colorFlash.retr("warn"),"rgba(100,100,100,0.8)",(game.data.map === "jump over"));
           },
           x1:568,
           x2:640,
@@ -382,6 +432,7 @@ var game = {
     }
   },
   init:function () {
+    pregame.colorFlash.make("warn","black","red","15");
     game.canv = document.createElement("CANVAS");
     game.canv.width = 640;
     game.canv.height = 480;
@@ -451,6 +502,7 @@ var game = {
     window.requestAnimationFrame(game.loop);
   },
   loop:function () {
+    pregame.colorFlash.update();
     game.updateGamepads();
     game.updateColls();
     game.update();
@@ -477,7 +529,13 @@ var game = {
       down: {t:false,ent:{},geom:{}},
       left: {t:false,ent:{},geom:{}},
       right: {t:false,ent:{},geom:{}},
-      middle: {trigger: {}, touch:false,tnum:0}
+      middle: {trigger: {}, touch:false,tnum:0},
+      all:{
+        up: {t:false,ent:{},geom:{}},
+        down: {t:false,ent:{},geom:{}},
+        left: {t:false,ent:{},geom:{}},
+        right: {t:false,ent:{},geom:{}},
+      }
     };
     var gdp = game.data.player;
     var colLocs = {
@@ -513,6 +571,19 @@ var game = {
         }
         if (((colLocs.r.x > simpleGeom.x1) && (colLocs.r.x < simpleGeom.x2)) && (colLocs.r.y.some(rx => (rx > simpleGeom.y1) && (rx < simpleGeom.y2)))) {
           colObj.right.t = true;
+        }
+        //all (every)
+        if ((colLocs.u.x.every(ux => (ux > simpleGeom.x1) && (ux < simpleGeom.x2))) && ((colLocs.u.y > simpleGeom.y1) && (colLocs.u.y < simpleGeom.y2))) {
+          colObj.all.up.t = true;
+        }
+        if ((colLocs.d.x.every(dx => (dx > simpleGeom.x1) && (dx < simpleGeom.x2))) && ((colLocs.d.y > simpleGeom.y1) && (colLocs.d.y < simpleGeom.y2))) {
+          colObj.all.down.t = true;
+        }
+        if (((colLocs.l.x > simpleGeom.x1) && (colLocs.l.x < simpleGeom.x2)) && (colLocs.l.y.every(lx => (lx > simpleGeom.y1) && (lx < simpleGeom.y2)))) {
+          colObj.all.left.t = true;
+        }
+        if (((colLocs.r.x > simpleGeom.x1) && (colLocs.r.x < simpleGeom.x2)) && (colLocs.r.y.every(rx => (rx > simpleGeom.y1) && (rx < simpleGeom.y2)))) {
+          colObj.all.right.t = true;
         }
       }
     }
@@ -693,10 +764,10 @@ var game = {
     }
     else if (game.data.player.cols.middle.touch === true) {game.data.player.cols.middle.trigger.func();}
     game.data.player.gravity = true;
-    if ((game.data.player.cols.left.t) && (game.data.player.spd.x < 0)) {
+    if ((game.data.player.cols.all.left.t) && (game.data.player.spd.x < 0)) {
       game.data.player.spd.x = 0;
     }
-    if ((game.data.player.cols.right.t) && (game.data.player.spd.x > 0)) {
+    if ((game.data.player.cols.all.right.t) && (game.data.player.spd.x > 0)) {
       game.data.player.spd.x = 0;
     }
     if ((game.data.player.cols.up.t) && (game.data.player.spd.y < 0)) {
@@ -899,6 +970,9 @@ var game = {
         game.draw.fillRect(game.maps[game.data.map].enemies[enemyno].x - 16,game.maps[game.data.map].enemies[enemyno].y - 16,32,4);
         if (game.maps[game.data.map].enemies[enemyno].hp < game.maps[game.data.map].enemies[enemyno].maxhp / 2) {
           game.draw.fillStyle = "#f58905";
+        }
+        else if (game.maps[game.data.map].enemies[enemyno].hp === 1) {
+          game.draw.fillStyle = pregame.colorFlash.retr("warn");
         }
         else {
           game.draw.fillStyle = "#0ee81c";
