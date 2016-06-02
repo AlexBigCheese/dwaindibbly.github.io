@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Game map editor</title>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.1.1/chroma.min.js" charset="utf-8"></script>
+    <script src="jscolor.min.js" charset="utf-8"></script>
+    <style media="screen">
+      body {
+        background-color: rgb(27, 28, 29);
+      }
+      #wbsbDiv {
+        margin-left: auto;
+        margin-right: auto;
+        width: auto;
+      }
+      #canv {
+        display: inline;
+        float:left;
+        background-color: rgb(65, 64, 71);
+      }
+      #sidebar {
+        color: white;
+        font-family: sans-serif;
+        display: inline-flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        background-color: rgb(65, 64, 71);
+      }
+      #properties {
+        display: inline-flex;
+        flex-direction: column;
+        background-color: rgb(81, 80, 88);
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .propbox {
+        display: inline-flex;
+        flex-direction: column;
+        margin-top: 10px;
+      }
+      label > input {
+        visibility: hidden;
+        position: absolute;
+      }
+      label > input + img {
+        cursor: default;
+        background-color: rgb(72, 71, 78);
+      }
+      label > input:checked + img {
+        background-color: rgb(101, 100, 108);
+      }
+    </style>
+  </head>
+  <body>
+    <button type="button" name="button" onclick="mapeditor.save()">Save</button>
+    <input type="file" name="name" id="load-button" onchange="mapeditor.load(event)" \>
+    <br \>
+    <div id="canv"></div>
+    <div id="sidebar">
+      <button type="button" name="button" class="jscolor {onFineChange: 'mapeditor.setColor(this)'}"></button>
+      <br \>
+      <div id="wbsbDiv">
+        <label id="wbLB">
+          <input type="radio" name="cbsb" value="wandbox">
+          <img src="wandbox.png" alt="Create Box" />
+        </label>
+        <label id="sbLB">
+          <input type="radio" name="cbsb" value="selbox">
+          <img src="selbox.png" alt="Selection Box" />
+        </label>
+      </div>
+      <br \>
+      <select id="mtoolpicker" name="">
+        <option value="rectangle">Rectangle</option>
+        <option value="trigger">Trigger</option>
+        <option value="enemy">Enemy</option>
+        <option value="selProp">Properties</option>
+      </select>
+      <br \>
+      <div id="cdButtons">
+        <button type="button" name="button" onclick="mapeditor.creatething()">Create</button>
+        <button type="button" name="button" onclick="mapeditor.deletething()">Delete</button>
+      </div>
+      <br \>
+      <div id="properties">
+        <div id="propMode">
+          <span id="pMText">Mode: Create Rectangle</span>
+        </div>
+        <div class="propbox" id="enemy">
+          <div class="varbox">
+            HP:<input type="number" name="HP" value="10" id="enemyHPBox" onchange="mapeditor.onEnemyHpChange(event)">
+          </div>
+        </div>
+      </div>
+    </div>
+    <br \>
+
+    <script src="mapeditor.js" charset="utf-8"></script>
+  </body>
+</html>

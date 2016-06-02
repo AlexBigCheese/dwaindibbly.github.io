@@ -117,15 +117,25 @@ var pregame = {
         }
       }
     }
+  },
+  rectTemplate(x1,y1,x2,y2,color) {
+    this.type = "rect";
+    this.x1 = x1;
+    this.x2 = x2;
+    this.y1 = y1;
+    this.y2 = y2;
+    this.color = color;
+    return this;
   }
 };
 var game = {
   screenfx:{
     hud: false,
   },
-  bulletTemplate: function (spdx2,spdy2) {
+  bulletTemplate: function (spdx2,spdy2,punch2 = false) {
     var spdx = spdx2;
     var spdy = spdy2;
+    var punch = punch2
     var toReturn = {
       speeds:{
         x: spdx,
@@ -134,7 +144,9 @@ var game = {
       pos: {
         x: game.data.player.wep.x,
         y: game.data.player.wep.y
-      }
+      },
+      punch: punch,
+      lifespan: 2,
     };
     return toReturn;
   },
@@ -176,6 +188,7 @@ var game = {
         wallJumpTimeout: 0,
         hang: false,
         reload: false,
+        punch: false
       },
       wep: {
         get x() {return (game.gamepads[0].sticks.r.dist + 8) * Math.cos(game.gamepads[0].sticks.r.rot) + game.data.player.x;},
@@ -218,6 +231,16 @@ var game = {
         select: {
           pressed:false,
           pressedlf:false
+        },
+        l2: {
+          value: 0,
+          pressed: false,
+          pressedlf: false
+        },
+        r2: {
+          value:0,
+          pressed: false,
+          pressedlf: false
         }
       },
       sticks: {
@@ -308,7 +331,7 @@ var game = {
           return game.data.player.reloads;
         },
         font:"20px Monospace"
-      }
+      },
     },
     textbox: {
       x:0,
@@ -326,6 +349,14 @@ var game = {
   },
   canv: {},
   draw: {},
+  loadbtn: {},
+  load(event) {
+    let reader = new FileReader();
+    reader.onload = function (event) {
+      game.maps = JSON.parse(event.target.result);
+    };
+    reader.readAsText(event.target.files[0]);
+  },
   ents: [
     {
       name:"spawnpoint",
@@ -366,7 +397,8 @@ var game = {
         }
       ],
       sides: {
-        right: "jump over"
+        right: "jump over",
+        left: "finish"
       },
       triggers: [
         {
@@ -436,17 +468,25 @@ var game = {
           y2:464
         }
       ],
+      enemies: [
+        new pregame.enemyTemplate(64,456,10)
+      ],
       sides: {
         left: "start",
-        right: "finish"
+        right: "start"
       }
     }
   },
   init:function () {
     pregame.colorFlash.make("warn","black","red","15");
+    game.loadbtn = document.createElement("INPUT");
+    game.loadbtn.setAttribute("type", "file");
+    game.loadbtn.addEventListener("change", game.load);
     game.canv = document.createElement("CANVAS");
     game.canv.width = 640;
     game.canv.height = 480;
+    document.body.appendChild(game.loadbtn);
+    document.body.appendChild(document.createElement("br"));
     document.body.appendChild(game.canv);
     game.draw = game.canv.getContext("2d");
     game.makebg();
@@ -528,6 +568,20 @@ var game = {
       var tempw = pregame.randomInt(10,64);
       game.renderpoints.background.clouds.push({
         x:pregame.randomInt(0,640),
+        y:pregame.randomInt(0,100),
+        w:tempw,
+        h:pregame.randomInt(10,tempw)
+      });
+    }
+  },
+  makebgx2() {
+    //clouds
+    game.renderpoints.background.clouds = [];
+    var cloudcount = pregame.randomInt(0,10);
+    for (var cloudnum = 0;cloudnum < cloudcount;cloudnum++) {
+      var tempw = pregame.randomInt(10,64);
+      game.renderpoints.background.clouds.push({
+        x:pregame.randomInt(2,game.canv.width * 2),
         y:pregame.randomInt(0,100),
         w:tempw,
         h:pregame.randomInt(10,tempw)
@@ -681,6 +735,7 @@ var game = {
     if ((game.gamepads[0].buttons.r1.pressed) && (!game.gamepads[0].buttons.r1.pressedlf)) {
       game.data.player.mvs.attacking = true;
     }
+    if ((game.gamepads[0].buttons.r2.pressed) && (!game.gamepads[0].buttons.r2.pressedlf)) {game.data.player.mvs.punch = true;}
     if ((game.gamepads[0].buttons.select.pressed) && (!game.gamepads[0].buttons.select.pressedlf)) {
       game.data.player.mvs.reloading = true;
     }
@@ -742,7 +797,6 @@ var game = {
         if (game.maps[game.data.map].sides.right !== "finish") {
           game.renderpoints.mapScroll.enabled = true;
           game.renderpoints.mapScroll.direction = "right";
-          game.makebg();
           game.data.player.x = 0;
         }
         else {
@@ -758,7 +812,6 @@ var game = {
         if (game.maps[game.data.map].sides.left !== "finish") {
           game.renderpoints.mapScroll.enabled = true;
           game.renderpoints.mapScroll.direction = "left";
-          game.makebg();
           game.data.player.x = game.canv.width;
         }
         else {
@@ -808,6 +861,10 @@ var game = {
       game.data.player.wep.bullets.push(game.bulletTemplate(game.gamepads[0].sticks.r.x * 4,game.gamepads[0].sticks.r.y * 4));
       game.data.player.mvs.attacking = false;
     }
+    if (game.data.player.mvs.punch && game.data.player.wep.show) {
+      game.data.player.wep.bullets.push(game.bulletTemplate(game.gamepads[0].sticks.r.x * 4,game.gamepads[0].sticks.r.y * 4,true));
+      game.data.player.mvs.punch = false;
+    }
     if (game.data.player.mvs.reloading && (game.data.player.reloads !== 0)) {
       game.data.player.clip = 20;
       game.data.player.reloads--;
@@ -818,19 +875,22 @@ var game = {
       game.data.player.mvs.jumps--;
       game.data.player.mvs.jump = false;
     }
-    //bullets be moving?
-    if (game.data.player.wep.bulletsMoving) {
-      for (var bulletno = 0;bulletno < game.data.player.wep.bullets.length;bulletno++) {
-        if (typeof game.data.player.wep.bullets[bulletno] !== "undefined") {
-          if (typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") {
+    //bullets be moving and lifespan down if punch
+    for (var bulletno = 0;bulletno < game.data.player.wep.bullets.length;bulletno++) {
+      if (typeof game.data.player.wep.bullets[bulletno] !== "undefined") {
+        if (typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") {
+          if (game.data.player.wep.bulletsMoving){
             game.data.player.wep.bullets[bulletno].pos.x += game.data.player.wep.bullets[bulletno].speeds.x;
             game.data.player.wep.bullets[bulletno].pos.y += game.data.player.wep.bullets[bulletno].speeds.y;
+          }
+          if ((game.data.player.wep.bullets[bulletno].punch) && (typeof game.data.player.wep.bullets[bulletno].lifespan !== "undefined")) {
+            game.data.player.wep.bullets[bulletno].lifespan--;
           }
         }
       }
     }
 
-    //kill bullets if touch geom
+    //kill bullets if touch geom or life none
     for (var geomno = 0;geomno < game.maps[game.data.map].geoms.length;geomno++) {
       var simpleGeom = game.maps[game.data.map].geoms[geomno];
       for (var bulletno = game.data.player.wep.bullets.length - 1;bulletno >= 0;bulletno--) {
@@ -838,7 +898,11 @@ var game = {
           if (simpleGeom.type === "rect") {
             if (((game.data.player.wep.bullets[bulletno].pos.x > simpleGeom.x1) && (game.data.player.wep.bullets[bulletno].pos.x < simpleGeom.x2)) && ((game.data.player.wep.bullets[bulletno].pos.y > simpleGeom.y1) && (game.data.player.wep.bullets[bulletno].pos.y < simpleGeom.y2))) {
               game.data.player.wep.bullets.splice(bulletno, 1);
+              continue;
             }
+          }
+          if (game.data.player.wep.bullets[bulletno].lifespan === 0) {
+            game.data.player.wep.bullets.splice(bulletno, 1);
           }
         }
 
@@ -901,6 +965,8 @@ var game = {
         game.gamepads[gpn].buttons.x.pressedlf = game.rawpads[gpn].buttons[2].pressed;
         game.gamepads[gpn].buttons.select.pressedlf = game.gamepads[gpn].buttons.select.pressed;
         game.gamepads[gpn].buttons.y.pressedlf = game.gamepads[gpn].buttons.y.pressed;
+        game.gamepads[gpn].buttons.l2.pressedlf = game.gamepads[gpn].buttons.l2.pressed;
+        game.gamepads[gpn].buttons.r2.pressedlf = game.gamepads[gpn].buttons.r2.pressed;
         game.gamepads[gpn].buttons.a.pressed = game.rawpads[gpn].buttons[0].pressed;
         game.gamepads[gpn].buttons.x.pressed = game.rawpads[gpn].buttons[2].pressed;
         game.gamepads[gpn].buttons.b.pressed = game.rawpads[gpn].buttons[1].pressed;
@@ -927,6 +993,11 @@ var game = {
         game.gamepads[gpn].dpad.r.pressed = game.rawpads[gpn].buttons[15].pressed;
         game.gamepads[gpn].buttons.l1.pressed = game.rawpads[gpn].buttons[4].pressed;
         game.gamepads[gpn].buttons.r1.pressed = game.rawpads[gpn].buttons[5].pressed;
+        // 6 -- 7
+        game.gamepads[gpn].buttons.l2.value = game.rawpads[gpn].buttons[6].value;
+        game.gamepads[gpn].buttons.r2.value = game.rawpads[gpn].buttons[7].value;
+        game.gamepads[gpn].buttons.l2.pressed = game.gamepads[gpn].buttons.l2.value > 0.5;
+        game.gamepads[gpn].buttons.r2.pressed = game.gamepads[gpn].buttons.r2.value > 0.5;
         game.gamepads[gpn].buttons.select.pressed = game.rawpads[gpn].buttons[8].pressed;
       }
     }
@@ -955,6 +1026,9 @@ var game = {
       }
     }
     if (game.rp.mapScroll.enabled) {
+      if (game.rp.mapScroll.start) {
+        game.makebgx2();
+      }
       if (game.rp.mapScroll.direction === "right") {
         if (game.rp.mapScroll.start) {
           game.renderpoints.mapScroll.playerx = game.canv.width - 1;
@@ -978,10 +1052,61 @@ var game = {
           }
         }
         //player transition and offsetting here
-        // here
-        // and here?
         game.draw.fillStyle = game.renderpoints.player.color;
         game.draw.fillRect((game.renderpoints.mapScroll.playerx - game.renderpoints.player.width / 2) - game.rp.mapScroll.playeroffset,game.renderpoints.player.y - game.renderpoints.player.height / 2,game.renderpoints.player.width,game.renderpoints.player.height);
+        //enemies and hp and offsetting
+        //current
+        if ("enemies" in game.maps[game.data.map]) {
+          for (let enemyno = 0;enemyno < game.maps[game.data.map].enemies.length;enemyno++) {
+            game.draw.fillStyle = "#56090d";
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 8) - game.rp.mapScroll.offset, game.maps[game.data.map].enemies[enemyno].y - 8, 16, 16);
+            game.draw.fillStyle = "#2a2840";
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 16) - game.rp.mapScroll.offset,game.maps[game.data.map].enemies[enemyno].y - 16,32,4);
+            if (game.maps[game.data.map].enemies[enemyno].hp < game.maps[game.data.map].enemies[enemyno].maxhp / 2) {
+              game.draw.fillStyle = "#f58905";
+            }
+            else if (game.maps[game.data.map].enemies[enemyno].hp === 1) {
+              game.draw.fillStyle = pregame.colorFlash.retr("warn");
+            }
+            else {
+              game.draw.fillStyle = "#0ee81c";
+            }
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 15) - game.rp.mapScroll.offset,game.maps[game.data.map].enemies[enemyno].y - 15,(30 / game.maps[game.data.map].enemies[enemyno].maxhp) * game.maps[game.data.map].enemies[enemyno].hp,2)
+          }
+        }
+        //after
+
+        if ("enemies" in game.maps[game.maps[game.data.map].sides.right]) {
+          for (let enemyno = 0;enemyno < game.maps[game.maps[game.data.map].sides.right].enemies.length;enemyno++) {
+            //draw enemy
+            game.draw.fillStyle = "#56090d";
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].x - 8) - game.rp.mapScroll.offset) + game.canv.width, game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].y - 8, 16, 16);
+
+            game.draw.fillStyle = "#2a2840";
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].x - 16) - game.rp.mapScroll.offset) + game.canv.width,game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].y - 16,32,4);
+            if (game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].hp < game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].maxhp / 2) {
+              game.draw.fillStyle = "#f58905";
+            }
+            else if (game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].hp === 1) {
+              game.draw.fillStyle = pregame.colorFlash.retr("warn");
+            }
+            else {
+              game.draw.fillStyle = "#0ee81c";
+            }
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].x - 15) + game.canv.width) - game.rp.mapScroll.offset,game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].y - 15,(30 / game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].maxhp) * game.maps[game.maps[game.data.map].sides.right].enemies[enemyno].hp,2)
+          }
+        }
+        //render clouds (and set next bg?)
+        game.draw.fillStyle = "rgba(200,200,200,0.8)";
+        for (var cloudnum = game.renderpoints.background.clouds.length - 1;cloudnum >= 0;cloudnum--) {
+          var cloud = game.renderpoints.background.clouds[cloudnum];
+          game.draw.fillRect(cloud.x - game.rp.mapScroll.offset,cloud.y,cloud.w,cloud.h);
+          if (game.renderpoints.mapScroll.offset === game.canv.width) {
+            if (cloud.x < game.canv.width) {
+              game.renderpoints.background.clouds.splice(cloudnum,1);
+            }
+          }
+        }
       }
       //left
       if (game.rp.mapScroll.direction === "left") {
@@ -1006,11 +1131,64 @@ var game = {
             game.draw.fillRect((simpleGeom.x1 + game.rp.mapScroll.offset) - game.canv.width,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
           }
         }
-        //player transition and offsetting here
-        // here
-        // and here?
+        //player transition and offsetting
         game.draw.fillStyle = game.renderpoints.player.color;
         game.draw.fillRect((game.renderpoints.mapScroll.playerx - game.renderpoints.player.width / 2) + game.rp.mapScroll.playeroffset,game.renderpoints.player.y - game.renderpoints.player.height / 2,game.renderpoints.player.width,game.renderpoints.player.height);
+        //enemies, hp and offsetting
+        //current
+        if ("enemies" in game.maps[game.data.map]) {
+          for (var enemyno = 0;enemyno < game.maps[game.data.map].enemies.length;enemyno++) {
+            game.draw.fillStyle = "#56090d";
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 8) + game.rp.mapScroll.offset, game.maps[game.data.map].enemies[enemyno].y - 8, 16, 16);
+            game.draw.fillStyle = "#2a2840";
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 16) + game.rp.mapScroll.offset,game.maps[game.data.map].enemies[enemyno].y - 16,32,4);
+            if (game.maps[game.data.map].enemies[enemyno].hp < game.maps[game.data.map].enemies[enemyno].maxhp / 2) {
+              game.draw.fillStyle = "#f58905";
+            }
+            else if (game.maps[game.data.map].enemies[enemyno].hp === 1) {
+              game.draw.fillStyle = pregame.colorFlash.retr("warn");
+            }
+            else {
+              game.draw.fillStyle = "#0ee81c";
+            }
+            game.draw.fillRect((game.maps[game.data.map].enemies[enemyno].x - 15) + game.rp.mapScroll.offset,game.maps[game.data.map].enemies[enemyno].y - 15,(30 / game.maps[game.data.map].enemies[enemyno].maxhp) * game.maps[game.data.map].enemies[enemyno].hp,2)
+          }
+        }
+        //after
+
+        if ("enemies" in game.maps[game.maps[game.data.map].sides.left]) {
+          for (let enemyno = 0;enemyno < game.maps[game.maps[game.data.map].sides.left].enemies.length;enemyno++) {
+            //draw enemy
+            game.draw.fillStyle = "#56090d";
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].x - 8) + game.rp.mapScroll.offset) - game.canv.width, game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].y - 8, 16, 16);
+
+            game.draw.fillStyle = "#2a2840";
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].x - 16) + game.rp.mapScroll.offset) - game.canv.width,game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].y - 16,32,4);
+            if (game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].hp < game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].maxhp / 2) {
+              game.draw.fillStyle = "#f58905";
+            }
+            else if (game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].hp === 1) {
+              game.draw.fillStyle = pregame.colorFlash.retr("warn");
+            }
+            else {
+              game.draw.fillStyle = "#0ee81c";
+            }
+            game.draw.fillRect(((game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].x - 15) - game.canv.width) + game.rp.mapScroll.offset,game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].y - 15,(30 / game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].maxhp) * game.maps[game.maps[game.data.map].sides.left].enemies[enemyno].hp,2)
+          }
+        }
+
+        //render clouds (and set next bg?)
+        game.draw.fillStyle = "rgba(200,200,200,0.8)";
+        for (var cloudnum = game.renderpoints.background.clouds.length - 1;cloudnum >= 0;cloudnum--) {
+          var cloud = game.renderpoints.background.clouds[cloudnum];
+          game.draw.fillRect(cloud.x + game.rp.mapScroll.offset,cloud.y,cloud.w,cloud.h);
+          if (game.renderpoints.mapScroll.offset === game.canv.width) {
+            if (cloud.x > game.canv.width) {
+              game.renderpoints.background.clouds.splice(cloudnum,1);
+            }
+          }
+        }
+
       }
       if (game.renderpoints.mapScroll.offset === game.canv.width) {
         game.renderpoints.mapScroll.enabled = false;
@@ -1021,12 +1199,26 @@ var game = {
         if (game.rp.mapScroll.direction === "left") game.data.map = game.maps[game.data.map].sides.left;
       }
       else {game.renderpoints.mapScroll.offset += 10;game.renderpoints.mapScroll.playeroffset += 10;}
-      game.draw.fillStyle = "#000000";
+      //render bullets
+      game.draw.fillStyle = "rgba(0,0,0,0.8)";
       for (var bulletno = 0;bulletno < game.data.player.wep.bullets.length;bulletno++) {
         if (typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") {
           game.draw.fillRect(game.data.player.wep.bullets[bulletno].pos.x - 2, game.data.player.wep.bullets[bulletno].pos.y - 2, 4, 4);
         }
       }
+      //render hud
+      game.draw.fillStyle = "rgba(100,100,100,0.8)";
+      game.draw.fillRect(8, 480 - 40, 100, 32);
+      game.draw.fillRect(360 - 8, 480 - 40, 100, 32);
+      game.draw.fillRect(480 - 8, 480 - 40, 100, 32);
+      game.draw.fillStyle = game.renderpoints.hud.hptxt.color;
+      game.draw.font = game.renderpoints.hud.hptxt.font;
+      game.draw.fillText(game.renderpoints.hud.hptxt.text,game.renderpoints.hud.hptxt.x,game.renderpoints.hud.hptxt.y);
+      game.draw.fillStyle = game.renderpoints.hud.cliptxt.color;
+      game.draw.font = game.renderpoints.hud.cliptxt.font;
+      game.draw.fillText(game.renderpoints.hud.cliptxt.text,game.renderpoints.hud.cliptxt.x,game.renderpoints.hud.cliptxt.y);
+      game.draw.font = game.renderpoints.hud.reloadstxt.font;
+      game.draw.fillText(game.renderpoints.hud.reloadstxt.text,game.renderpoints.hud.reloadstxt.x,game.renderpoints.hud.reloadstxt.y);
       return;
     }
     //render map
@@ -1038,11 +1230,13 @@ var game = {
         game.draw.fillRect(simpleGeom.x1,simpleGeom.y1,simpleGeom.x2 - simpleGeom.x1,simpleGeom.y2 - simpleGeom.y1);
       }
     }
-    //render clouds
+    //render clouds and move them and if under view, tp to screen width
     game.draw.fillStyle = "rgba(200,200,200,0.8)";
     for (var cloudnum = 0;cloudnum < game.renderpoints.background.clouds.length;cloudnum++) {
       var cloud = game.renderpoints.background.clouds[cloudnum];
       game.draw.fillRect(cloud.x,cloud.y,cloud.w,cloud.h);
+      game.renderpoints.background.clouds[cloudnum].x--;
+      if ((game.renderpoints.background.clouds[cloudnum].x + game.renderpoints.background.clouds[cloudnum].w) < 0) game.renderpoints.background.clouds[cloudnum].x = game.canv.width
     }
     //render square which is player
     game.draw.fillStyle = game.renderpoints.player.color;
@@ -1072,10 +1266,10 @@ var game = {
       }
     }
 
-    //render bullets
+    //render bullets except if punch
     game.draw.fillStyle = "#000000";
     for (var bulletno = 0;bulletno < game.data.player.wep.bullets.length;bulletno++) {
-      if (typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") {
+      if ((typeof game.data.player.wep.bullets[bulletno].pos !== "undefined") && (!game.data.player.wep.bullets[bulletno].punch)) {
         game.draw.fillRect(game.data.player.wep.bullets[bulletno].pos.x - 2, game.data.player.wep.bullets[bulletno].pos.y - 2, 4, 4);
       }
     }
