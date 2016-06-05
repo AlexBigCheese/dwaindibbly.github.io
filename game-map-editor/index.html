@@ -6,9 +6,56 @@
     <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.1.1/chroma.min.js" charset="utf-8"></script>
     <script src="jscolor.min.js" charset="utf-8"></script>
+    <script src="jsColorPicker.min.js" charset="utf-8"></script>
     <style media="screen">
+      $mainThings: rgb(65, 64, 71);
       body {
         background-color: rgb(27, 28, 29);
+      }
+      #ddMenus {
+        display:inline-flex;
+        padding: 10px;
+        background-color: rgb(65, 64, 71);
+        margin-bottom: 5px;
+      }
+      #newScreen {
+        background-color: rgb(65, 64, 71);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        display: none;
+      }
+      #newScreen > .okbutton {
+        float: right;
+      }
+      #newScreen > .cancelbutton {
+        float: left;
+      }
+      .ddMenu {
+        padding-left: 10px;
+        padding-right: 10px;
+        font-family: sans-serif;
+        color: rgb(255, 255, 255);
+      }
+      .ddContent {
+        display:none;
+        flex-direction: column;
+        position: absolute;
+        background-color: rgb(221, 221, 221);
+        padding: 5px;
+      }
+      .ddMenu:hover > .ddContent {
+        display: inline-flex;
+      }
+      .ddContent > * {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-family: sans-serif;
+      }
+      #tbtextarea {
+        overflow-x: scroll;
+        width:auto;
       }
       #wbsbDiv {
         margin-left: auto;
@@ -19,6 +66,7 @@
         display: inline;
         float:left;
         background-color: rgb(65, 64, 71);
+        padding: 10px;
       }
       #sidebar {
         color: white;
@@ -52,6 +100,11 @@
         flex-direction: column;
         margin-top: 10px;
       }
+      .subpropbox {
+        display: inline-flex;
+        flex-direction: column;
+        margin-top: 2px;
+      }
       label > input {
         visibility: hidden;
         position: absolute;
@@ -66,12 +119,39 @@
     </style>
   </head>
   <body>
-    <button type="button" name="button" onclick="mapeditor.save()">Save</button>
-    <input type="file" name="name" id="load-button" onchange="mapeditor.load(event)" \>
+    <div id="ddMenus">
+      <div class="ddMenu">
+        File
+        <div class="ddContent">
+          <a onclick="mapeditor.save()">Save</a>
+          <a onclick="mapeditor.loadDialog()">Load</a>
+        </div>
+      </div>
+      <div class="ddMenu">
+        Edit
+        <div class="ddContent">
+          <span>No edit menu <b>Yet</b>!</span>
+        </div>
+      </div>
+      <div class="ddMenu">
+        New
+        <div class="ddContent">
+          <a onclick="">Screen</a>
+        </div>
+      </div>
+      <div class="ddMenu">
+        Preferences
+        <div class="ddContent">
+          <a onclick="">Screen Prefs</a>
+          <a onclick="">Map Prefs</a>
+        </div>
+      </div>
+    </div>
     <br \>
     <div id="canv"></div>
     <div id="sidebar">
-      <button type="button" name="button" class="jscolor {onFineChange: 'mapeditor.setColor(this)'}"></button>
+      PRIMARY:<input class="color" value="rgb(255,255,255)" id="primaryColor" data-colormode="rgb" onchange="mapeditor.setColor(event)">
+      SECONDARY:<input class="color" value="rgb(255,255,255)" id="secondaryColor" data-colormode="rgb" onchange="mapeditor.setSecondaryColor(event)">
       <br \>
       <div id="wbsbDiv">
         <label id="wbLB">
@@ -105,10 +185,42 @@
             HP:<input type="number" name="HP" value="10" id="enemyHPBox" onchange="mapeditor.onEnemyHpChange(event)">
           </div>
         </div>
+        <div class="propbox" id="trigger">
+          <div id="tbenDiv">
+            <label>
+            <input type="radio" name="tben" value="textbox" checked>
+            <img src="textbox.png" alt="Text box" />
+            </label>
+            <label>
+            <input type="radio" name="tben" value="enemy">
+            <img src="enemy.png" alt="Enemy" />
+            </label>
+          </div>
+          <div class="subpropbox" id="etrigger">
+
+          </div>
+          <div class="subpropbox" id="tbtrigger">
+            <div class="varbox">
+              TEXT:<br \>
+              <textarea name="tbText" rows="4" cols="60" onchange="mapeditor.settextbox.text(event)" id="tbtextarea"></textarea>
+            </div>
+            <br \>
+            <div class="varbox">
+              FONT:<br \>
+              <input type="text" name="tbtriggeFont" value="10px Monospace" onchange="mapeditor.settextbox.font(event)"><br \>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <br \>
-
+    <div id="newScreen">
+      <div class="varbox">
+        NAME:<input type="text" name="name" value="Name">
+      </div>
+      <button type="button" name="button" class="cancelbutton" onclick='$("#newScreen").css("display", "none")'>Cancel</button>
+      <button type="button" name="button" class="okbutton">Ok</button>
+    </div>
     <script src="mapeditor.js" charset="utf-8"></script>
   </body>
 </html>

@@ -1,4 +1,13 @@
 var pregame = {
+  tbTriggerTemplate(text,font,bg,fg) {
+    this.text = text;
+    this.font = font;
+    this.bg = bg;
+    this.fg = fg;
+    this.padding = 5;
+    this.posType = "RelativeMinusHalf";
+    return this;
+  },
   enemyTemplate: function (x,y,hp) {
     this.w = this.h = 16;
     this.hp = hp;
@@ -132,6 +141,7 @@ var mapeditor = {
     y2: 0,
     enabled: false,
     currColor: "#FFFFFF",
+    currSecColor: "#000000",
     pointSelect: false,
     selType: "none",
     selNum: 0,
@@ -139,13 +149,33 @@ var mapeditor = {
     prop: {
       enemy:{
         hp:10
+      },
+      trigger: {
+        get selType() {
+          return document.querySelector('input[name="tben"]:checked').value;
+        },
+        tbox: {
+          text: "",
+          font: "10px Monospace",
+          get bg() {
+            return mapeditor.selbox.currSecColor;
+          },
+          get fg() {
+            return mapeditor.selbox.currColor;
+          },
+        }
       }
     }
+  },
+  colorPickers: {
+    Primary: {},
+    Secondary: {},
+    Colors: {}
   },
   toolmenu: document.getElementById("toolpicker"),
   mtoolmenu: document.getElementById("mtoolpicker"),
   get currTool() {
-    return document.querySelector('input[name = "cbsb"]:checked').value;
+    return document.querySelector('input[name="cbsb"]:checked').value;
   },
   get currmTool() {
     return mapeditor.mtoolmenu.value;
@@ -244,8 +274,11 @@ var mapeditor = {
     }
 
   },
-  setColor(jscolor) {
-    mapeditor.selbox.currColor = jscolor.toRGBString();
+  setColor(event) {
+    mapeditor.selbox.currColor = event.target.value;
+  },
+  setSecondaryColor(event) {
+    mapeditor.selbox.currSecColor = event.target.value;
   },
   createRect() {
     let rect = {
@@ -272,8 +305,21 @@ var mapeditor = {
     };
     reader.readAsText(event.target.files[0]);
   },
+  loadDialog() {
+    let fileElem = document.createElement("INPUT");
+    fileElem.type = "file";
+    fileElem.addEventListener("change",mapeditor.load);
+    fileElem.click();
+  },
   init() {
     pregame.colorFlash.make("warn","black","red","15");
+    //mapeditor.colorPickers.Primary = new ColorPicker("input.color", {color: "#FFFFFF", actionCallback: mapeditor.setColor});
+    //mapeditor.colorPickers.Secondary = new ColorPicker("input.color", {color: "#FFFFFF", actionCallback: mapeditor.setSecondaryColor});
+    mapeditor.colorPickers.Colors = jsColorPicker("input.color", {
+      init: function (elem, colors) {
+        elem.style.backgroundColor = elem.value;
+      }
+    });
     mapeditor.canv = document.createElement("CANVAS");
     mapeditor.draw = mapeditor.canv.getContext("2d");
     mapeditor.canv.width = 640;
@@ -331,6 +377,15 @@ var mapeditor = {
       }
     }
     //space
+    //render Triggers if triggers
+    if (typeof mapeditor.maps[mapeditor.view.currmap].triggers !== "undefined") {
+      for (let trig = 0;trig < mapeditor.maps[mapeditor.view.currmap].triggers.length;trig++) {
+        let trigObj = mapeditor.maps[mapeditor.view.currmap].triggers[trig];
+        mapeditor.draw.fillStyle = "rgba(177, 63, 187, 0.76)";
+        mapeditor.draw.strokeStyle = "rgb(177, 63, 187)";
+        mapeditor.draw.fillRect(trigObj.x1,trigObj.y1,trigObj.x2 - trigObj.x1,trigObj.y2 - trigObj.y1);
+      }
+    }
 
     //render selection box if enabled
     if (mapeditor.selbox.enabled) {
@@ -405,13 +460,59 @@ var mapeditor = {
     }
     //display correct div based on mtool
     let epropdiv = document.getElementById("enemy");
+    let trpropdiv = document.getElementById("trigger");
+    //triggers
+    let tbtrpropdiv = document.getElementById("tbtrigger");
+    tbtrpropdiv.style.display = "none";
     epropdiv.style.display = "none";
+    trpropdiv.style.display = "none";
     if (mapeditor.currmTool === "enemy") {
       epropdiv.style.display = "inline-flex";
+    }
+    if (mapeditor.currmTool === "trigger") {
+      trpropdiv.style.display = "inline-flex";
+      //now correct trigger
+      if (mapeditor.selbox.prop.trigger.selType === "textbox") {
+        tbtrpropdiv.style.display = "inline-flex";
+      }
     }
   },
   createEnemy() {
     mapeditor.maps[mapeditor.view.currmap].enemies.push(new pregame.enemyTemplate(mapeditor.selbox.x1,mapeditor.selbox.y1,mapeditor.selbox.prop.enemy.hp));
+  },
+  createTrigger() {
+    if (mapeditor.selbox.prop.trigger.selType === "textbox") {
+      mapeditor.createTextboxTrigger();
+    }
+  },
+  createTextboxTrigger() {
+    let dummyTextbox = {
+      textbox: {
+        location: "RelativeMinusHalf",
+        text: mapeditor.selbox.prop.trigger.tbox.text,
+        font: mapeditor.selbox.prop.trigger.tbox.font,
+        fontHeight: mapeditor.selbox.prop.trigger.tbox.font.substr(0, mapeditor.selbox.prop.trigger.tbox.font.indexOf("p")),
+        fg: mapeditor.selbox.currColor,
+        bg: mapeditor.selbox.currSecColor
+      },
+      x1: mapeditor.selbox.x1,
+      x2: mapeditor.selbox.x2,
+      y1: mapeditor.selbox.y1,
+      y2: mapeditor.selbox.y2,
+      type: "textbox"
+    };
+    if (typeof mapeditor.maps[mapeditor.view.currmap].triggers === "undefined") {
+      mapeditor.maps[mapeditor.view.currmap].triggers = [];
+    }
+    mapeditor.maps[mapeditor.view.currmap].triggers.push(dummyTextbox);
+  },
+  settextbox: {
+    text(event) {
+      mapeditor.selbox.prop.trigger.tbox.text = event.target.value.split("/n");
+    },
+    font(event) {
+      mapeditor.selbox.prop.trigger.tbox.font = event.target.value;
+    }
   },
   creatething() {
     if (mapeditor.currmTool === "rectangle") {
@@ -419,6 +520,9 @@ var mapeditor = {
     }
     if (mapeditor.currmTool === "enemy") {
       mapeditor.createEnemy();
+    }
+    if (mapeditor.currmTool === "trigger") {
+      mapeditor.createTrigger();
     }
   },
   deletething() {
