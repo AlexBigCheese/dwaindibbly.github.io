@@ -8,9 +8,12 @@
     <script src="jscolor.min.js" charset="utf-8"></script>
     <script src="jsColorPicker.min.js" charset="utf-8"></script>
     <style media="screen">
-      $mainThings: rgb(65, 64, 71);
+      :root {
+        --main-things: rgb(65, 64, 71);
+      }
       body {
         background-color: rgb(27, 28, 29);
+        height: 100%;
       }
       #ddMenus {
         display:inline-flex;
@@ -119,102 +122,163 @@
       label > input:checked + img {
         background-color: rgb(101, 100, 108);
       }
+      #cdButtons {
+        display: inline-flex;
+        flex-direction: row;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .createButton:hover{
+        background-color: rgb(87, 241, 121);
+        color: rgb(52, 181, 81);
+      }
+      .createButton {
+        background-color: rgb(129, 223, 150);
+        color: rgb(52, 181, 81);
+        padding: 10px;
+        width: auto;
+      }
+      .deleteButton:hover {
+        background-color: rgb(218, 44, 44);
+        color: rgb(209, 94, 94);
+      }
+      .deleteButton {
+        background-color: rgb(209, 60, 60);
+        color: rgb(209, 94, 94);
+        padding: 10px;
+        width: auto;
+      }
+      #statusBar {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background-color: rgb(65, 64, 71);
+        left: 0;
+        border-top-style:solid;
+        border-top-width: 1px;
+        border-top-color: rgb(95, 95, 98);
+      }
+      #statusBar > span {
+        border-right-style: solid;
+        border-right-width: 1px;
+        border-right-color: rgb(95, 95, 98);
+        color: rgb(95, 95, 98);
+        padding-left: 2px;
+        padding-right: 2px;
+      }
+      #ddmenusandbanvasandsidebar {
+        min-height: 100%;
+      }
     </style>
   </head>
   <body>
-    <div id="ddMenus">
-      <div class="ddMenu">
-        File
-        <div class="ddContent">
-          <a onclick="mapeditor.save()">Save</a>
-          <a onclick="mapeditor.loadDialog()">Load</a>
+
+
+    <div id="ddmenusandcanvasandsidebar">
+      <div id="ddMenus">
+        <div class="ddMenu">
+          File
+          <div class="ddContent">
+            <a onclick="mapeditor.save()">Save</a>
+            <a onclick="mapeditor.loadDialog()">Load</a>
+          </div>
+        </div>
+        <div class="ddMenu">
+          Edit
+          <div class="ddContent">
+            <span>No edit menu <b>Yet</b>!</span>
+          </div>
+        </div>
+        <div class="ddMenu">
+          New
+          <div class="ddContent">
+            <a onclick="">Screen</a>
+          </div>
+        </div>
+        <div class="ddMenu">
+          Preferences
+          <div class="ddContent">
+            <a onclick="">Screen Prefs</a>
+            <a onclick="">Map Prefs</a>
+          </div>
         </div>
       </div>
-      <div class="ddMenu">
-        Edit
-        <div class="ddContent">
-          <span>No edit menu <b>Yet</b>!</span>
+      <br \>
+      <div id="canv"></div>
+      <div id="sidebar">
+        PRIMARY:<input class="color" value="rgb(255,255,255)" id="primaryColor" data-colormode="rgb" onchange="mapeditor.setColor(event)">
+        SECONDARY:<input class="color" value="rgb(255,255,255)" id="secondaryColor" data-colormode="rgb" onchange="mapeditor.setSecondaryColor(event)">
+        <br \>
+        <div id="wbsbDiv">
+          <label id="wbLB">
+            <input type="radio" name="cbsb" value="wandbox" checked>
+            <img src="wandbox.png" alt="Create Box" />
+          </label>
+          <label id="sbLB">
+            <input type="radio" name="cbsb" value="selbox">
+            <img src="selbox.png" alt="Selection Box" />
+          </label>
         </div>
-      </div>
-      <div class="ddMenu">
-        New
-        <div class="ddContent">
-          <a onclick="">Screen</a>
+        <br \>
+        <select id="mtoolpicker" name="">
+          <option value="rectangle">Rectangle</option>
+          <option value="trigger">Trigger</option>
+          <option value="enemy">Enemy</option>
+          <option value="selProp">Properties</option>
+        </select>
+        <br \>
+        <div id="cdButtons">
+          <div class="createButton" onclick="mapeditor.creatething()">
+            ✓
+          </div>
+          <div class="deleteButton" onclick="mapeditor.deletething()">
+            ✗
+          </div>
         </div>
-      </div>
-      <div class="ddMenu">
-        Preferences
-        <div class="ddContent">
-          <a onclick="">Screen Prefs</a>
-          <a onclick="">Map Prefs</a>
+        <br \>
+        <div id="properties">
+          <div id="propMode">
+            <span id="pMText">Mode: Create Rectangle</span>
+          </div>
+          <div class="propbox" id="enemy">
+            <div class="varbox">
+              HP:<input type="number" name="HP" value="10" id="enemyHPBox" onchange="mapeditor.onEnemyHpChange(event)">
+            </div>
+          </div>
+          <div class="propbox" id="trigger">
+            <div id="tbenDiv">
+              <label>
+              <input type="radio" name="tben" value="textbox" checked>
+              <img src="textbox.png" alt="Text box" />
+              </label>
+              <label>
+              <input type="radio" name="tben" value="enemy">
+              <img src="enemy.png" alt="Enemy" />
+              </label>
+            </div>
+            <div class="subpropbox" id="etrigger">
+
+            </div>
+            <div class="subpropbox" id="tbtrigger">
+              <div class="varbox">
+                TEXT:<br \>
+                <textarea name="tbText" rows="4" cols="60" onchange="mapeditor.settextbox.text(event)" id="tbtextarea"></textarea>
+              </div>
+              <br \>
+              <div class="varbox">
+                FONT:<br \>
+                <input type="text" name="tbtriggeFont" value="10px Monospace" onchange="mapeditor.settextbox.font(event)"><br \>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <br \>
-    <div id="canv"></div>
-    <div id="sidebar">
-      PRIMARY:<input class="color" value="rgb(255,255,255)" id="primaryColor" data-colormode="rgb" onchange="mapeditor.setColor(event)">
-      SECONDARY:<input class="color" value="rgb(255,255,255)" id="secondaryColor" data-colormode="rgb" onchange="mapeditor.setSecondaryColor(event)">
-      <br \>
-      <div id="wbsbDiv">
-        <label id="wbLB">
-          <input type="radio" name="cbsb" value="wandbox">
-          <img src="wandbox.png" alt="Create Box" />
-        </label>
-        <label id="sbLB">
-          <input type="radio" name="cbsb" value="selbox">
-          <img src="selbox.png" alt="Selection Box" />
-        </label>
-      </div>
-      <br \>
-      <select id="mtoolpicker" name="">
-        <option value="rectangle">Rectangle</option>
-        <option value="trigger">Trigger</option>
-        <option value="enemy">Enemy</option>
-        <option value="selProp">Properties</option>
-      </select>
-      <br \>
-      <div id="cdButtons">
-        <button type="button" name="button" onclick="mapeditor.creatething()">Create</button>
-        <button type="button" name="button" onclick="mapeditor.deletething()">Delete</button>
-      </div>
-      <br \>
-      <div id="properties">
-        <div id="propMode">
-          <span id="pMText">Mode: Create Rectangle</span>
-        </div>
-        <div class="propbox" id="enemy">
-          <div class="varbox">
-            HP:<input type="number" name="HP" value="10" id="enemyHPBox" onchange="mapeditor.onEnemyHpChange(event)">
-          </div>
-        </div>
-        <div class="propbox" id="trigger">
-          <div id="tbenDiv">
-            <label>
-            <input type="radio" name="tben" value="textbox" checked>
-            <img src="textbox.png" alt="Text box" />
-            </label>
-            <label>
-            <input type="radio" name="tben" value="enemy">
-            <img src="enemy.png" alt="Enemy" />
-            </label>
-          </div>
-          <div class="subpropbox" id="etrigger">
-
-          </div>
-          <div class="subpropbox" id="tbtrigger">
-            <div class="varbox">
-              TEXT:<br \>
-              <textarea name="tbText" rows="4" cols="60" onchange="mapeditor.settextbox.text(event)" id="tbtextarea"></textarea>
-            </div>
-            <br \>
-            <div class="varbox">
-              FONT:<br \>
-              <input type="text" name="tbtriggeFont" value="10px Monospace" onchange="mapeditor.settextbox.font(event)"><br \>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div id="statusBar">
+      <span id="sbscreenName"></span>
+      <span id="sbcreateselectmode"></span>
+      <span id="sbobjecttype"></span>
     </div>
     <br \>
     <div id="newScreen">

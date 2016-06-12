@@ -134,6 +134,11 @@ var pregame = {
   }
 };
 var mapeditor = {
+  statusbar: {
+    screenname: document.getElementById("sbscreenName"),
+    createselectmode: document.getElementById("sbcreateselectmode"),
+    objecttype: document.getElementById("sbobjecttype")
+  },
   selbox: {
     x1: 0,
     x2: 0,
@@ -265,11 +270,22 @@ var mapeditor = {
   },
   onDrag(mouseevent) {
     if (mapeditor.selbox.clickdown) {
+      //moveobject
       if (mapeditor.currTool === "selbox") {
         if ((mapeditor.selbox.selType === "enemy") && (typeof mapeditor.maps[mapeditor.view.currmap].enemies[mapeditor.selbox.selNum] !== "undefined")) {
           mapeditor.maps[mapeditor.view.currmap].enemies[mapeditor.selbox.selNum].x = mouseevent.offsetX;
           mapeditor.maps[mapeditor.view.currmap].enemies[mapeditor.selbox.selNum].y = mouseevent.offsetY;
         }
+      }
+      //moveandupdate
+      if (mapeditor.currTool === "selbox") {
+        mapeditor.selbox.x1 = mouseevent.offsetX;
+        mapeditor.selbox.y1 = mouseevent.offsetY;
+      }
+      if (mapeditor.currTool === "wandbox") {
+        mapeditor.selbox.enabled = true;
+        mapeditor.selbox.x2 = mouseevent.offsetX;
+        mapeditor.selbox.y2 = mouseevent.offsetY;
       }
     }
 
@@ -445,17 +461,26 @@ var mapeditor = {
       }
     }
     pmText.innerHTML = "Mode: " + pmCS + " " + pmOBJ;
+    //also, status bar
+    mapeditor.statusbar.screenname.innerHTML = mapeditor.view.currmap;
+    mapeditor.statusbar.createselectmode.innerHTML = pmCS;
+    mapeditor.statusbar.objecttype.innerHTML = pmOBJ;
     //colision with point select if point select is on, select enemies
     // remember, over 1 and under 2 (over close and under far)
     if (mapeditor.selbox.pointSelect) {
+      let selected = false;
       if ("enemies" in mapeditor.maps[mapeditor.view.currmap]) {
         for (var enemyno = 0;enemyno < mapeditor.maps[mapeditor.view.currmap].enemies.length;enemyno++) {
           let currEnemy = mapeditor.maps[mapeditor.view.currmap].enemies[enemyno];
           if ((mapeditor.selbox.x1 > (currEnemy.x - (currEnemy.w / 2))) && (mapeditor.selbox.x1 < (currEnemy.x + (currEnemy.w / 2))) && (mapeditor.selbox.y1 > (currEnemy.y - (currEnemy.h / 2))) && (mapeditor.selbox.y1 < (currEnemy.y + (currEnemy.h / 2)))) {
             mapeditor.selbox.selType = "enemy";
             mapeditor.selbox.selNum = enemyno;
+            selected = true;
           }
         }
+      }
+      if (selected === false) {
+        mapeditor.selbox.selType = "none"
       }
     }
     //display correct div based on mtool
