@@ -220,12 +220,14 @@
           </label>
         </div>
         <br \>
-        <select id="mtoolpicker" name="">
-          <option value="rectangle">Rectangle</option>
-          <option value="trigger">Trigger</option>
-          <option value="enemy">Enemy</option>
-          <option value="selProp">Properties</option>
-        </select>
+        <div id="mtoolpickerStyle">
+          <select id="mtoolpicker" name="">
+            <option value="rectangle">Rectangle</option>
+            <option value="trigger">Trigger</option>
+            <option value="enemy">Enemy</option>
+            <option value="selProp">Properties</option>
+          </select>
+        </div>
         <br \>
         <div id="cdButtons">
           <div class="createButton" onclick="mapeditor.creatething()">
@@ -237,9 +239,6 @@
         </div>
         <br \>
         <div id="properties">
-          <div id="propMode">
-            <span id="pMText">Mode: Create Rectangle</span>
-          </div>
           <div class="propbox" id="enemy">
             <div class="varbox">
               HP:<input type="number" name="HP" value="10" id="enemyHPBox" onchange="mapeditor.onEnemyHpChange(event)">

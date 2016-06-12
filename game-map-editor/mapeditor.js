@@ -426,10 +426,8 @@ var mapeditor = {
 
   },
   update() {
-    //pmText
-    let pmText = document.getElementById("pMText");
-    let pmCS = "Create";
-    let pmOBJ = "Rectangle";
+    let pmCS = "Nothing";
+    let pmOBJ = "Nothing";
     if (mapeditor.currmTool === "selProp") {
       pmCS = "Select";
       switch (mapeditor.selbox.selType) {
@@ -460,8 +458,7 @@ var mapeditor = {
           break;
       }
     }
-    pmText.innerHTML = "Mode: " + pmCS + " " + pmOBJ;
-    //also, status bar
+    //went to status bar
     mapeditor.statusbar.screenname.innerHTML = mapeditor.view.currmap;
     mapeditor.statusbar.createselectmode.innerHTML = pmCS;
     mapeditor.statusbar.objecttype.innerHTML = pmOBJ;
@@ -481,6 +478,9 @@ var mapeditor = {
       }
       if (selected === false) {
         mapeditor.selbox.selType = "none"
+      }
+      if (selected) {
+        document.getElementById("mtoolpicker").value = "selProp";
       }
     }
     //display correct div based on mtool
