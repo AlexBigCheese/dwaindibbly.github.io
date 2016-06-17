@@ -203,6 +203,22 @@ var game = {
     renderAnons: true,
   },
   rawpads: [],
+  mouse: {
+    x: 0,
+    y: 0,
+    get relX() {
+      return game.mouse.x - game.data.player.x;
+    },
+    get relY() {
+      return game.mouse.y - game.data.player.y;
+    },
+  rotation: function () {
+    return Math.atan2(game.mouse.relY, game.mouse.relX);
+  },
+  distance: function() {
+    return Math.sqrt(((game.mouse.relX * game.mouse.relX)) + ((game.mouse.relY * game.mouse.relY)));
+  },
+},
   gamepads: [
     {
       id: 0,
@@ -485,71 +501,78 @@ var game = {
     game.canv = document.createElement("CANVAS");
     game.canv.width = 640;
     game.canv.height = 480;
+    game.canv.addEventListener("mousemove", function(event) {
+      game.mouse.x = event.offsetX;
+      game.mouse.y = event.offsetY;
+    });
+    game.canv.addEventListener("mousedown", function(event) {
+      game.gamepads[0].buttons.r1.pressed = true;
+    });
+    game.canv.addEventListener("mouseup", function(event) {
+      game.gamepads[0].buttons.r1.pressed = false;
+    })
     document.body.appendChild(game.loadbtn);
     document.body.appendChild(document.createElement("br"));
     document.body.appendChild(game.canv);
     game.draw = game.canv.getContext("2d");
     game.makebg();
-    window.addEventListener("keydown", function(ev) {
-      switch (ev.key) {
-        case "d":
+    document.body.addEventListener("keydown", function(ev) {
+      switch (ev.code) {
+        case "KeyD":
           game.gamepads[0].dpad.r.pressed = true;
-          game.gamepads[0].dpad.r.pressedlf = true;
           break;
-        case "a":
+        case "KeyA":
           game.gamepads[0].dpad.l.pressed = true;
-          game.gamepads[0].dpad.l.pressedlf = true;
           break;
-        case "w":
+        case "KeyW":
           game.gamepads[0].dpad.u.pressed = true;
-          game.gamepads[0].dpad.u.pressedlf = true;
           break;
-        case "s":
+        case "KeyS":
           game.gamepads[0].dpad.d.pressed = true;
-          game.gamepads[0].dpad.d.pressedlf = true;
           break;
-        case "e":
+        case "KeyE":
           game.gamepads[0].buttons.y.pressed = true;
-          game.gamepads[0].buttons.y.pressedlf = true;
           break;
-        case "space" || " ":
+        case "Space" || " ":
           game.gamepads[0].buttons.a.pressed = true;
-          game.gamepads[0].buttons.a.pressedlf = true;
           break;
-        case "f":
+        case "KeyF":
           game.gamepads[0].buttons.l1.pressed = true;
-          game.gamepads[0].buttons.l1.pressedlf = true;
+          break;
+        default:
+          alert("NO, YOU CANT USE " + ev.key);
+          return;
           break;
       }
-    });
-    window.addEventListener("keyup", function(ev) {
-      switch (ev.key) {
-        case "d":
+    }, true);
+    document.addEventListener("keyup", function(ev) {
+      switch (ev.code) {
+        case "KeyD":
           game.gamepads[0].dpad.r.pressed = false;
           game.gamepads[0].dpad.r.pressedlf = false;
           break;
-        case "a":
+        case "KeyA":
           game.gamepads[0].dpad.l.pressed = false;
           game.gamepads[0].dpad.l.pressedlf = false;
           break;
-        case "w":
+        case "KeyW":
           game.gamepads[0].dpad.u.pressed = false;
           game.gamepads[0].dpad.u.pressedlf = false;
           break;
-        case "s":
+        case "KeyS":
           game.gamepads[0].dpad.d.pressed = false;
           game.gamepads[0].dpad.d.pressedlf = false;
           break;
-        case "space" || " ":
+        case "Space" || " ":
           game.gamepads[0].buttons.a.pressed = false;
           game.gamepads[0].buttons.a.pressedlf = false;
           break;
-        case "f":
+        case "KeyF":
           game.gamepads[0].buttons.l1.pressed = false;
           game.gamepads[0].buttons.l1.pressedlf = false;
           break;
       }
-    });
+    }, true);
     window.requestAnimationFrame(game.loop);
   },
   loop:function () {
@@ -1000,6 +1023,10 @@ var game = {
         game.gamepads[gpn].buttons.r2.pressed = game.gamepads[gpn].buttons.r2.value > 0.5;
         game.gamepads[gpn].buttons.select.pressed = game.rawpads[gpn].buttons[8].pressed;
       }
+    }
+    if (typeof game.rawpads[0] === "undefined") {
+      game.gamepads[0].sticks.r.rot = game.mouse.rotation();
+      game.gamepads[0].sticks.r.dist = 1;
     }
   },
   render: function () {
