@@ -393,13 +393,18 @@ var mapeditor = {
       }
     }
     //space
-    //render Triggers if triggers
+    //render Triggers if triggers and highlight blue if selected
     if (typeof mapeditor.maps[mapeditor.view.currmap].triggers !== "undefined") {
       for (let trig = 0;trig < mapeditor.maps[mapeditor.view.currmap].triggers.length;trig++) {
         let trigObj = mapeditor.maps[mapeditor.view.currmap].triggers[trig];
         mapeditor.draw.fillStyle = "rgba(177, 63, 187, 0.76)";
         mapeditor.draw.strokeStyle = "rgb(177, 63, 187)";
         mapeditor.draw.fillRect(trigObj.x1,trigObj.y1,trigObj.x2 - trigObj.x1,trigObj.y2 - trigObj.y1);
+        if ((mapeditor.selbox.selType === "trigger") && (mapeditor.selbox.selNum === trig)) {
+          mapeditor.draw.fillStyle = "rgba(63, 98, 187, 0.87)";
+          mapeditor.draw.strokeStyle = "rgb(63, 90, 187)";
+          mapeditor.draw.fillRect(trigObj.x1,trigObj.y1,trigObj.x2 - trigObj.x1,trigObj.y2 - trigObj.y1);
+        }
       }
     }
 
@@ -466,12 +471,24 @@ var mapeditor = {
     // remember, over 1 and under 2 (over close and under far)
     if (mapeditor.selbox.pointSelect) {
       let selected = false;
+      //enemies
       if ("enemies" in mapeditor.maps[mapeditor.view.currmap]) {
         for (var enemyno = 0;enemyno < mapeditor.maps[mapeditor.view.currmap].enemies.length;enemyno++) {
           let currEnemy = mapeditor.maps[mapeditor.view.currmap].enemies[enemyno];
           if ((mapeditor.selbox.x1 > (currEnemy.x - (currEnemy.w / 2))) && (mapeditor.selbox.x1 < (currEnemy.x + (currEnemy.w / 2))) && (mapeditor.selbox.y1 > (currEnemy.y - (currEnemy.h / 2))) && (mapeditor.selbox.y1 < (currEnemy.y + (currEnemy.h / 2)))) {
             mapeditor.selbox.selType = "enemy";
             mapeditor.selbox.selNum = enemyno;
+            selected = true;
+          }
+        }
+      }
+      //triggers
+      if ("triggers" in mapeditor.maps[mapeditor.view.currmap]) {
+        for (var trigno = 0;trigno < mapeditor.maps[mapeditor.view.currmap].triggers.length;trigno++) {
+          let currTrig = mapeditor.maps[mapeditor.view.currmap].triggers[trigno];
+          if ((mapeditor.selbox.x1 > currTrig.x1) && (mapeditor.selbox.x1 < currTrig.x2) && (mapeditor.selbox.y1 > currTrig.y1) && (mapeditor.selbox.y1 < currTrig.y2)) {
+            mapeditor.selbox.selType = "trigger";
+            mapeditor.selbox.selNum = trigno;
             selected = true;
           }
         }
@@ -554,6 +571,79 @@ var mapeditor = {
     if (mapeditor.selbox.pointSelect) {
       if (mapeditor.selbox.selType === "enemy") {
         mapeditor.maps[mapeditor.view.currmap].enemies.splice(mapeditor.selbox.selNum, 1);
+      }
+      else if (mapeditor.selbox.selType === "trigger") {
+        mapeditor.maps[mapeditor.view.currmap].triggers.splice(mapeditor.selbox.selNum, 1);
+      }
+    }
+  },
+  setMap(event) {
+    mapeditor.view.currmap = event.target.value;
+  },
+  makenew: {
+    choose(thing) {
+      $(".hoverBox").css("display", "none");
+      switch (thing) {
+        case "map":
+        mapeditor.makenew.map();
+        break;
+      }
+    },
+    map() {
+      mapeditor.maps[mapeditor.makenew.mapname] = {
+        number: 1,
+        name: mapeditor.makenew.mapname,
+        geoms: [
+          {
+            type: "rect",
+            x1: 0,
+            x2: 640,
+            y1: 464,
+            y2: 480,
+            color: "#55f107"
+          }
+        ],
+        sides: {
+
+        },
+        enemies: [
+          new pregame.enemyTemplate(100,450,2),
+          new pregame.enemyTemplate(64,450,6)
+        ]
+      };
+    },
+    mapSet(event) {
+      mapeditor.makenew.mapname = event.target.value;
+    },
+    mapname: "Name"
+  },
+  prefb: {
+    mapscr: {
+      setLeft(event) {
+        if (typeof mapeditor.maps[mapeditor.view.currmap].sides !== "undefined") {
+          if (event.target.value !== "none" || "NONE") {
+            mapeditor.maps[mapeditor.view.currmap].sides.left = event.target.value;
+          }
+          else {mapeditor.maps[mapeditor.view.currmap].sides.left = undefined;}
+        }
+        else {
+          mapeditor.maps[mapeditor.view.currmap].sides = {
+            left: event.target.value
+          }
+        }
+      },
+      setRight(event) {
+        if (typeof mapeditor.maps[mapeditor.view.currmap].sides !== "undefined") {
+          if (event.target.value !== "none" || "NONE") {
+            mapeditor.maps[mapeditor.view.currmap].sides.right = event.target.value;
+          }
+          else {mapeditor.maps[mapeditor.view.currmap].sides.right = undefined;}
+        }
+        else {
+          mapeditor.maps[mapeditor.view.currmap].sides = {
+            right: event.target.value
+          }
+        }
       }
     }
   }

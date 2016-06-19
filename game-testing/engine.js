@@ -132,6 +132,69 @@ var game = {
   screenfx:{
     hud: false,
   },
+  keyboard: {
+    id: 0,
+    buttons: {
+      a: {
+        pressed: false,
+        pressedlf: false
+      },
+      b: {
+        pressed: false,
+        pressedlf: false},
+      x: {
+        pressed: false,
+        pressedlf: false},
+      y: {
+        pressed: false,
+        pressedlf: false},
+      l1: {
+        pressed: false,
+        pressedlf: false
+      },
+      r1: {
+        pressed:false,
+        pressedlf:false
+      },
+      select: {
+        pressed:false,
+        pressedlf:false
+      },
+      l2: {
+        value: 0,
+        pressed: false,
+        pressedlf: false
+      },
+      r2: {
+        value:0,
+        pressed: false,
+        pressedlf: false
+      }
+    },
+    sticks: {
+      l: {
+        x: 0,
+        y: 0,
+        rot: 0,
+        dist: 0
+      },
+      r: {
+        x: 0,
+        y: 0,
+        rot: 0,
+        dist: 0
+      }
+    },
+    dpad: {
+      u: {pressed: false, pressedlf: false},
+      d: {pressed: false, pressedlf: false},
+      l: {pressed: false, pressedlf: false},
+      r: {pressed: false, pressedlf: false},
+    },
+    buttonsraw: [],
+    axesraw: []
+  },
+  allowkbupdate: true,
   bulletTemplate: function (spdx2,spdy2,punch2 = false) {
     var spdx = spdx2;
     var spdy = spdy2;
@@ -517,61 +580,63 @@ var game = {
     game.draw = game.canv.getContext("2d");
     game.makebg();
     document.body.addEventListener("keydown", function(ev) {
-      switch (ev.code) {
-        case "KeyD":
-          game.gamepads[0].dpad.r.pressed = true;
+
+      switch (ev.key) {
+        case "d":
+          game.keyboard.dpad.r.pressed = true;
           break;
-        case "KeyA":
-          game.gamepads[0].dpad.l.pressed = true;
+        case "a":
+          game.keyboard.dpad.l.pressed = true;
           break;
-        case "KeyW":
-          game.gamepads[0].dpad.u.pressed = true;
+        case "w":
+          game.keyboard.dpad.u.pressed = true;
           break;
-        case "KeyS":
-          game.gamepads[0].dpad.d.pressed = true;
+        case "s":
+          game.keyboard.dpad.d.pressed = true;
           break;
-        case "KeyE":
-          game.gamepads[0].buttons.y.pressed = true;
+        case "e":
+          game.keyboard.buttons.y.pressed = true;
           break;
-        case "Space" || " ":
-          game.gamepads[0].buttons.a.pressed = true;
+        case " ":
+          game.keyboard.buttons.a.pressed = true;
           break;
-        case "KeyF":
-          game.gamepads[0].buttons.l1.pressed = true;
+        case "f":
+          game.keyboard.buttons.l1.pressed = true;
+          break;
+        case "shift":
+          game.keyboard.buttons.b.pressed = true;
           break;
         default:
-          alert("NO, YOU CANT USE " + ev.key);
           return;
           break;
       }
+      ev.preventDefault();
     }, true);
-    document.addEventListener("keyup", function(ev) {
-      switch (ev.code) {
-        case "KeyD":
-          game.gamepads[0].dpad.r.pressed = false;
-          game.gamepads[0].dpad.r.pressedlf = false;
+    document.body.addEventListener("keyup", function(ev) {
+      switch (ev.key.toLowerCase()) {
+        case "d":
+          game.keyboard.dpad.r.pressed = false;
           break;
-        case "KeyA":
-          game.gamepads[0].dpad.l.pressed = false;
-          game.gamepads[0].dpad.l.pressedlf = false;
+        case "a":
+          game.keyboard.dpad.l.pressed = false;
           break;
-        case "KeyW":
-          game.gamepads[0].dpad.u.pressed = false;
-          game.gamepads[0].dpad.u.pressedlf = false;
+        case "w":
+          game.keyboard.dpad.u.pressed = false;
           break;
-        case "KeyS":
-          game.gamepads[0].dpad.d.pressed = false;
-          game.gamepads[0].dpad.d.pressedlf = false;
+        case "s":
+          game.keyboard.dpad.d.pressed = false;
           break;
-        case "Space" || " ":
-          game.gamepads[0].buttons.a.pressed = false;
-          game.gamepads[0].buttons.a.pressedlf = false;
+        case " ":
+          game.keyboard.buttons.a.pressed = false;
           break;
-        case "KeyF":
-          game.gamepads[0].buttons.l1.pressed = false;
-          game.gamepads[0].buttons.l1.pressedlf = false;
+        case "f":
+          game.keyboard.buttons.l1.pressed = false;
+          break;
+        case "shift":
+          game.keyboard.buttons.b.pressed = false;
           break;
       }
+      ev.preventDefault();
     }, true);
     window.requestAnimationFrame(game.loop);
   },
@@ -739,10 +804,10 @@ var game = {
         game.data.player.spd.x += game.gamepads[0].sticks.l.x * 2;
       }
     }
-    if (game.gamepads[0].dpad.r.pressed) {game.data.player.spd.x++;}
-    if (game.gamepads[0].dpad.l.pressed) {game.data.player.spd.x--;}
-    if ((game.gamepads[0].dpad.r.pressed) && (game.gamepads[0].buttons.b.pressed)) {game.data.player.x+= 2;}
-    if ((game.gamepads[0].dpad.l.pressed) && (game.gamepads[0].buttons.b.pressed)) {game.data.player.x-= 2;}
+    if (game.gamepads[0].dpad.r.pressed) {game.data.player.spd.x += 1;}
+    if (game.gamepads[0].dpad.l.pressed) {game.data.player.spd.x -= 1;}
+    if ((game.gamepads[0].dpad.r.pressed) && (game.gamepads[0].buttons.b.pressed)) {game.data.player.x += 2;}
+    if ((game.gamepads[0].dpad.l.pressed) && (game.gamepads[0].buttons.b.pressed)) {game.data.player.x -= 2;}
     if (game.gamepads[0].sticks.r.dist < 0.5) {game.data.player.wep.show = false;}
     else {game.data.player.wep.show = true;}
     if (game.data.player.mvs.attacking) {
@@ -848,7 +913,17 @@ var game = {
     }
 
     //collisions stuff?
-    if ((game.data.player.cols.middle.touch === true) && (typeof game.data.player.cols.middle.trigger.onetime !== "undefined")) {
+    //textboxtriggers (remember to push to github)
+    if ((game.data.player.cols.middle.touch === true) && (game.data.player.cols.middle.trigger.type === "textbox")) {
+      //step 1: gwhst text,font,padding
+      let gwhst = pregame.gwhst(game.data.player.cols.middle.trigger.textbox.text,game.data.player.cols.middle.trigger.textbox.font, 5);
+      //step 2: create the textbox and put into renderpoints x,y,font,text,padding,fg,bg,enabled
+      if (game.data.player.cols.middle.trigger.textbox.location === "RelativeMinusHalf") {
+        alert(gwhst.width + " x " + gwhst.height);
+        game.renderpoints.textbox = pregame.textboxTemplate(game.data.player.x - (gwhst.width / 2), game.data.player.y - (gwhst.height + game.data.player.height), game.data.player.cols.middle.trigger.textbox.font, game.data.player.cols.middle.trigger.textbox.text, 5, game.data.player.cols.middle.trigger.textbox.fg, game.data.player.cols.middle.trigger.textbox.bg, true);
+      }
+    }
+    else if ((game.data.player.cols.middle.touch === true) && (typeof game.data.player.cols.middle.trigger.onetime !== "undefined")) {
       if (game.data.player.cols.middle.trigger.onetime.on === true) {
         game.maps[game.data.map].triggers[game.data.player.cols.middle.tnum].onetime.on = !game.data.player.cols.middle.trigger.onetime.on;
         game.data.player.cols.middle.trigger.func();
@@ -894,7 +969,7 @@ var game = {
       game.data.player.mvs.reloading = false;
     }
     if ((game.data.player.mvs.jump) && (game.data.player.mvs.jumps !== 0)) {
-      game.data.player.spd.y -= 10,
+      game.data.player.spd.y -= 10;
       game.data.player.mvs.jumps--;
       game.data.player.mvs.jump = false;
     }
@@ -1024,9 +1099,25 @@ var game = {
         game.gamepads[gpn].buttons.select.pressed = game.rawpads[gpn].buttons[8].pressed;
       }
     }
+
     if (typeof game.rawpads[0] === "undefined") {
       game.gamepads[0].sticks.r.rot = game.mouse.rotation();
       game.gamepads[0].sticks.r.dist = 1;
+      if (game.gamepads[0].buttons.l1.pressed) {game.gamepads[0].buttons.l1.pressedlf = true;}
+      else {game.gamepads[0].buttons.l1.pressedlf = false;}
+      if (game.gamepads[0].buttons.a.pressed) {game.gamepads[0].buttons.a.pressedlf = true;}
+      else {game.gamepads[0].buttons.a.pressedlf = false;}
+      game.gamepads[0].buttons.x.pressedlf = game.gamepads[0].buttons.x.pressed;
+      game.gamepads[0].buttons.select.pressedlf = game.gamepads[0].buttons.select.pressed;
+      game.gamepads[0].buttons.y.pressedlf = game.gamepads[0].buttons.y.pressed;
+      game.gamepads[0].buttons.l2.pressedlf = game.gamepads[0].buttons.l2.pressed;
+      game.gamepads[0].buttons.r2.pressedlf = game.gamepads[0].buttons.r2.pressed;
+      game.gamepads[0].dpad.u.pressed = game.keyboard.dpad.u.pressed;
+      game.gamepads[0].dpad.d.pressed = game.keyboard.dpad.d.pressed;
+      game.gamepads[0].dpad.l.pressed = game.keyboard.dpad.l.pressed;
+      game.gamepads[0].dpad.r.pressed = game.keyboard.dpad.r.pressed;
+      game.gamepads[0].buttons.a.pressed = game.keyboard.buttons.a.pressed;
+      game.gamepads[0].buttons.l1.pressed = game.keyboard.buttons.l1.pressed;
     }
   },
   render: function () {

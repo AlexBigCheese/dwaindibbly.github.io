@@ -21,19 +21,17 @@
         background-color: rgb(65, 64, 71);
         margin-bottom: 5px;
       }
-      #newScreen {
+      .hoverBox {
         background-color: rgb(65, 64, 71);
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%,-50%);
+        flex-direction: column;
         display: none;
-      }
-      #newScreen > .okbutton {
-        float: right;
-      }
-      #newScreen > .cancelbutton {
-        float: left;
+        padding: 10px;
+        color: rgb(98, 97, 105);
+        overflow: hidden;
       }
       .ddMenu {
         padding-left: 10px;
@@ -188,13 +186,26 @@
         width:auto;
         height: auto;
         background-color: rgb(93, 92, 98);
-
+      }
+      .varbox {
+        display: inline;
+      }
+      .hoverBox > .ruleBreak {
+        width: 100%;
+        height: 2px;
+        margin: 2px 0px 5px;
+        background-color: rgb(100, 100, 103);
+      }
+      .hoverBox > .title {
+        padding-left: auto;
+        padding-right: auto;
+      }
+      .hoverBox > .coHover {
+        display: inline-block;
       }
     </style>
   </head>
   <body>
-
-
     <div id="ddmenusandcanvasandsidebar">
       <div id="ddMenus">
         <div class="ddMenu">
@@ -213,14 +224,14 @@
         <div class="ddMenu">
           New
           <div class="ddContent">
-            <a onclick="">Screen</a>
+            <a onclick="$('#newScreen').css('display', 'inline-flex')">Screen</a>
           </div>
         </div>
         <div class="ddMenu">
           Preferences
           <div class="ddContent">
-            <a onclick="">Screen Prefs</a>
-            <a onclick="">Map Prefs</a>
+            <a onclick='$("#screenPrefs").css("display", "inline-flex")'>Screen Prefs</a>
+            <a onclick="alert('Coming Soon!')">Map Prefs</a>
           </div>
         </div>
       </div>
@@ -229,6 +240,7 @@
       <div id="sidebar">
         PRIMARY:<input class="color" value="rgb(255,255,255)" id="primaryColor" data-colormode="rgb" onchange="mapeditor.setColor(event)">
         SECONDARY:<input class="color" value="rgb(255,255,255)" id="secondaryColor" data-colormode="rgb" onchange="mapeditor.setSecondaryColor(event)">
+        MAP:<input type="text" name="name" value="start" onchange="mapeditor.setMap(event)">
         <br \>
         <div id="wbsbDiv">
           <label id="wbLB">
@@ -301,12 +313,30 @@
       <span id="sbobjecttype"></span>
     </div>
     <br \>
-    <div id="newScreen">
+    <div id="newScreen" class="hoverBox">
+      <span class="title">New Screen</span>
+      <div class="ruleBreak"></div>
       <div class="varbox">
-        NAME:<input type="text" name="name" value="Name">
+        NAME:<input type="text" name="name" value="Name" onchange="mapeditor.makenew.mapSet(event)">
       </div>
-      <button type="button" name="button" class="cancelbutton" onclick='$("#newScreen").css("display", "none")'>Cancel</button>
-      <button type="button" name="button" class="okbutton">Ok</button>
+      <div class="coHover">
+        <button type="button" name="button" class="cancelbutton" onclick='$(".hoverBox").css("display", "none")'>Cancel</button>
+        <button type="button" name="button" class="okbutton" onclick='mapeditor.makenew.choose("map")'>Ok</button>
+      </div>
+    </div>
+    <div id="screenPrefs" class="hoverBox">
+      <span class="title">Screen Preferences</span>
+      <div class="ruleBreak"></div>
+      <div class="varbox">
+        LEFT:<input type="text" name="name" value="NONE" onchange="mapeditor.prefb.mapscr.setLeft(event)">
+      </div>
+      <div class="varbox">
+        RIGHT:<input type="text" name="name" value="NONE" onchange="mapeditor.prefb.mapscr.setRight(event)">
+      </div>
+      <div class="coHover">
+        <button type="button" name="button" class="cancelbutton" onclick='$(".hoverBox").css("display", "none")'>Cancel</button>
+        <button type="button" name="button" class="okbutton" onclick='$(".hoverBox").css("display", "none")'>Ok</button>
+      </div>
     </div>
     <script src="mapeditor.js" charset="utf-8"></script>
   </body>
