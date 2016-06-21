@@ -2,7 +2,7 @@ body {
   font-family: Roboto;
 }
 div.topbar > .title {
-  padding: 50% 0px 50% 5px;
+  vertical-align: middle;
 }
 div.titleimg {
   margin: 0px 0px 0px 0px;
