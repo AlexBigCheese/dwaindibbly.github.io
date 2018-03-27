@@ -1053,7 +1053,7 @@ var game = {
     game.rawpads = navigator.getGamepads();
 
     for (gpn = 0; gpn < game.rawpads.length; gpn++) {
-      if (typeof game.rawpads[gpn] !== 'undefined') {
+      if (typeof game.rawpads[gpn] !== 'undefined' && gamepad.rawpads[gpn] !== null) {
         if (game.gamepads[gpn].buttons.l1.pressed) {game.gamepads[gpn].buttons.l1.pressedlf = true;}
         else {game.gamepads[gpn].buttons.l1.pressedlf = false;}
         if (game.gamepads[gpn].buttons.r1.pressed) {game.gamepads[gpn].buttons.r1.pressedlf = true;}
